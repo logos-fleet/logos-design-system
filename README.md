@@ -118,6 +118,29 @@ cmake --build build
 
 The CMake options are off by default — the default `nix build` ships only the QML files.
 
+### For the Web container (WebAssembly)
+
+```bash
+nix build .#wasm          # the same static QML modules, for wasm32-emscripten
+nix build .#wasm-smoke    # a wasm image linking Logos::DesignSystem, registrations asserted
+```
+
+`.#wasm` is the design system as the bundled Qt-for-WebAssembly QML runtime
+links it (ADR 0004 in logos-workspace): the runtime binary carries the type set
+and a Downloaded module ships QML text that imports `Logos.Theme` /
+`Logos.Controls`. It is the ordinary build with a different toolchain — Qt for
+wasm comes from `logos-nix` (`lib.qtWasmFor`, built from source), and nothing in
+`src/` changes to produce it. The first build is long: it builds Qt.
+
+`.#wasm-smoke` (`tests/wasm/`) is a separate CMake project that consumes the
+INSTALLED package through `find_package(LogosDesignSystem CONFIG)` and asserts
+each module's plugin survived the link. **A static-Qt consumer (iOS, wasm) must
+call `logos_design_system_resolve_static_plugins(<target>)`** after creating its
+target: `qt_add_executable`'s finalizer links our QML plugins plainly while the
+`Logos::DesignSystem` umbrella links them `WHOLE_ARCHIVE`, and CMake refuses an
+item that appears both ways. Shared-Qt desktop builds neither need nor mind the
+call.
+
 ## Storybook
 
 Interactive catalog of every token and control. Use it to:
