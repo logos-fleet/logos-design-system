@@ -60,7 +60,26 @@
           # binary, RPATHs rewritten so nothing references /nix/store at
           # runtime. Base for the platform-specific bundles below.
           bin-bundle-dir = dirBundler storybookDrv;
-        } // pkgs.lib.optionalAttrs pkgs.stdenv.isLinux {
+        }
+        # THE WEB CONTAINER'S COPY. Same static QML modules, compiled for
+        # wasm32-emscripten so they can be linked into the bundled Qt-wasm QML
+        # runtime ADR 0004 describes. Not on the Windows pseudo-system: a wasm
+        # artifact is produced by an ordinary NATIVE derivation (logos-nix
+        # README, "Wasm target"), so it belongs to the real systems only.
+        // pkgs.lib.optionalAttrs (system != "x86_64-windows") (
+          let qtWasm = logos-nix.lib.qtWasmFor system; in
+          rec {
+            wasm = import ./nix/wasm.nix { inherit pkgs common qtWasm; };
+
+            # A consumer of that artifact, because "the archives installed" and
+            # "a wasm image gets the Logos types" are different claims.
+            wasm-smoke = import ./nix/wasm-smoke.nix {
+              inherit pkgs common qtWasm;
+              designSystemWasm = wasm;
+            };
+          }
+        )
+        // pkgs.lib.optionalAttrs pkgs.stdenv.isLinux {
           # Single-file .AppImage — click-to-run on any modern Linux with no
           # Nix installed. Consumed by CI (uploaded as build artifact).
           bin-appimage = nix-bundle-appimage.lib.${system}.mkAppImage {
@@ -94,8 +113,15 @@
         default = storybook;
       });
 
-      checks = forAllSystems ({ system, ... }: {
+      checks = forAllSystems ({ system, pkgs, ... }: {
         tests = self.packages.${system}.tests;
+      }
+      # Not on Windows (no wasm there) and not in a default `nix flake check`
+      # on a Mac: the wasm Qt it links against is built from source. x86_64-linux
+      # is where CI may pay for it, the same placement logos-nix gives its own
+      # Qt-wasm probe.
+      // pkgs.lib.optionalAttrs (system == "x86_64-linux") {
+        wasm-smoke = self.packages.${system}.wasm-smoke;
       });
 
       devShells = forAllSystems ({ pkgs, ... }: {

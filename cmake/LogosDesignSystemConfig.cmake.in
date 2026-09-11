@@ -8,10 +8,45 @@
 #   target_link_libraries(<app> PRIVATE Logos::DesignSystem)
 #   qt_import_qml_plugins(<app>)
 # and `import Logos.Theme` / .Controls / .Icons resolves from embedded qrc.
+# With a STATIC Qt (iOS, wasm), also call
+#   logos_design_system_resolve_static_plugins(<app>)
+# — see the function's comment below for what it resolves.
 
 include(CMakeFindDependencyMacro)
 find_dependency(Qt6 REQUIRED COMPONENTS Core Qml Quick QuickControls2)
 
 include("${CMAKE_CURRENT_LIST_DIR}/LogosDesignSystemTargets.cmake")
+
+# STATIC-Qt CONSUMERS: one call resolves the umbrella's WHOLE_ARCHIVE against
+# Qt's own plain link of the same plugins.
+#
+# Under a static Qt (iOS, wasm) `qt_add_executable`'s finalizer runs
+# `qt_import_qml_plugins()`, which links every QML plugin the import scanner
+# found — ours among them — WITHOUT a link feature. The umbrella links the same
+# three targets with `$<LINK_LIBRARY:WHOLE_ARCHIVE,...>`, and CMake refuses an
+# item that appears both ways, at generate time:
+#
+#   Impossible to link target '<app>' because the link item
+#   'Logos::logos_theme_qmlplugin', specified without any feature or 'DEFAULT'
+#   feature, has already occurred with the feature 'WHOLE_ARCHIVE'
+#
+# WHOLE_ARCHIVE is the side to keep: it is a superset of the plain link, and it
+# is the reason the umbrella exists (a QQmlEngineExtensionPlugin's static
+# constructor is exactly what a linker drops). The override is a TARGET property,
+# so it cannot be set here for a target that does not exist yet — hence a
+# function the consumer calls on its own target.
+#
+# A shared-Qt desktop build never needs it (`qt_import_qml_plugins()` imports
+# nothing when Qt is shared), and calling it there is harmless, so a consumer
+# that builds for both can call it unconditionally.
+function(logos_design_system_resolve_static_plugins target)
+    if(NOT TARGET ${target})
+        message(FATAL_ERROR
+            "logos_design_system_resolve_static_plugins: no such target: ${target}")
+    endif()
+    set_property(TARGET ${target} APPEND PROPERTY LINK_LIBRARY_OVERRIDE
+        "WHOLE_ARCHIVE,Logos::logos_theme_qmlplugin,Logos::logos_icons_qmlplugin,Logos::logos_controls_qmlplugin"
+    )
+endfunction()
 
 check_required_components(LogosDesignSystem)
