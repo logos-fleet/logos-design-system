@@ -31,9 +31,11 @@ pkgs.stdenv.mkDerivation {
     runHook preBuild
     ${pkgs.logosEmscriptenSetup}
 
-    # CMAKE_FIND_ROOT_PATH as well as CMAKE_PREFIX_PATH: the Emscripten
-    # toolchain sets CMAKE_FIND_ROOT_PATH_MODE_PACKAGE to ONLY, so a prefix
-    # named only in CMAKE_PREFIX_PATH is never searched.
+    # The last two -D lines RESTATE the search paths qtWasm.cmakeFlags already
+    # sets (a repeated -D wins), because this consumer needs the design system's
+    # prefix alongside Qt's. Both variables, not just CMAKE_PREFIX_PATH: the
+    # Emscripten toolchain sets CMAKE_FIND_ROOT_PATH_MODE_PACKAGE to ONLY, so a
+    # prefix named only in CMAKE_PREFIX_PATH is never searched.
     cmake -S tests/wasm -B build-wasm-smoke -GNinja \
       ${pkgs.lib.escapeShellArgs qtWasm.cmakeFlags} \
       -DCMAKE_BUILD_TYPE=Release \

@@ -6,11 +6,11 @@
         "nixpkgs-windows": "nixpkgs-windows"
       },
       "locked": {
-        "lastModified": 1789146115,
-        "narHash": "sha256-im5ED9N9U9mXo/hQGlEkCPkQqz15U8fDkvNUsfBwV2A=",
+        "lastModified": 1789148476,
+        "narHash": "sha256-NOp+7mpWosbOtxnixhe+NuU6aAIrvFu4Xn+j2CmHaqA=",
         "owner": "logos-fleet",
         "repo": "logos-nix",
-        "rev": "9f3d4fa1296c25f681e1d12b537df80cfcf02594",
+        "rev": "53acb6cd780655835de77a88a1bfbc82b532335c",
         "type": "github"
       },
       "original": {
