@@ -95,6 +95,24 @@ TestCase {
         tryCompare(field.textInput, "activeFocus", true)
     }
 
+    // WHAT ANYTHING THAT IS NOT LOOKING AT THE FIELD CALLS IT. The editor is
+    // the item the accessibility tree carries -- the Control around it is not
+    // in the tree -- and a bare TextInput goes in with an empty name, so a
+    // screen reader reads "text field" and a driver has nothing to ask for.
+    // The placeholder is the words a sighted user identifies the field by, so
+    // it is the name (logos-workspace#174).
+    function test_editor_is_named_by_its_placeholder() {
+        field.placeholderText = "Account label"
+        tryCompare(field.textInput.Accessible, "name", "Account label")
+    }
+
+    function test_editor_name_follows_the_placeholder() {
+        field.placeholderText = "Seed phrase"
+        tryCompare(field.textInput.Accessible, "name", "Seed phrase")
+        field.placeholderText = "Chain ID"
+        tryCompare(field.textInput.Accessible, "name", "Chain ID")
+    }
+
     function test_joins_tab_focus_chain() {
         compare(field.activeFocusOnTab, true)
         compare(field.focusPolicy, Qt.StrongFocus)
