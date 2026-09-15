@@ -74,6 +74,28 @@ Control {
             echoMode: root.echoMode
             enabled: root.enabled
             activeFocusOnTab: true
+
+            // WHAT THIS FIELD IS CALLED, to anything that is not looking at it.
+            //
+            // A bare TextInput goes into the accessibility tree with an EMPTY
+            // name: the words a sighted user identifies a Logos field by are
+            // the PLACEHOLDER, and a placeholder is decoration as far as
+            // accessibility is concerned. So a screen reader reads "text field"
+            // and an automated driver has nothing to ask for -- on a phone,
+            // where a `web` variant's UI is pixels in a canvas and the
+            // accessibility tree is the only handle on it at all, that is the
+            // difference between a form that can be driven and one that cannot
+            // (logos-workspace#174).
+            //
+            // NAMED HERE RATHER THAN BY EACH CALLER, and the placeholder rather
+            // than a new property, for the same reason: every field in the
+            // system already has one, it already says what the field is for,
+            // and a name a caller has to remember to set is a name most fields
+            // will not have. `Accessible.name` attached to the CONTROL does not
+            // reach this editor -- measured on Qt for WebAssembly, where the
+            // wrapper is not in the tree at all -- so this is the only place it
+            // can be said.
+            Accessible.name: root.placeholderText
         }
     }
 }
